@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
   StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Alert,
@@ -23,7 +23,7 @@ const STARTERS = [
 ];
 
 export default function CoachScreen() {
-  const { child, ageMonths } = useChild();
+  const { child, ageMonths, isDemoMode } = useChild();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,6 +32,44 @@ export default function CoachScreen() {
 
   const milestones = ageMonths ? getMilestonesForAge(ageMonths) : [];
   const activities = ageMonths ? getActivitiesForAge(ageMonths) : [];
+
+  useEffect(() => {
+    if (!child || isDemoMode) return;
+
+    supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('child_id', child.id)
+      .order('created_at', { ascending: true })
+      .then(({ data }) => {
+        if (!data) return;
+        setMessages(
+          data.map((m) => ({
+            id: m.id,
+            role: m.role,
+            content: m.content,
+            timestamp: m.created_at,
+          }))
+        );
+      });
+  }, [child?.id, isDemoMode]);
+
+  function clearHistory() {
+    if (!child) return;
+    Alert.alert('Clear chat history', 'This deletes the whole conversation. This can\'t be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Clear',
+        style: 'destructive',
+        onPress: async () => {
+          if (!isDemoMode) {
+            await supabase.from('chat_messages').delete().eq('child_id', child.id);
+          }
+          setMessages([]);
+        },
+      },
+    ]);
+  }
 
   const sendMessage = useCallback(async (text: string) => {
     if (!child || !text.trim() || loading) return;
@@ -59,19 +97,20 @@ export default function CoachScreen() {
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
-
-      await supabase.from('chat_messages').insert([
-        { child_id: child.id, role: 'user', content: userMsg.content },
-        { child_id: child.id, role: 'assistant', content: reply },
-      ]);
-
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
+
+      if (!isDemoMode) {
+        supabase.from('chat_messages').insert([
+          { child_id: child.id, role: 'user', content: userMsg.content },
+          { child_id: child.id, role: 'assistant', content: reply },
+        ]);
+      }
     } catch {
       Alert.alert('Error', 'Could not reach the coach. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [child, messages, milestones, activities, loading]);
+  }, [child, messages, milestones, activities, loading, isDemoMode]);
 
   function toggleSpeech(text: string) {
     if (speaking) {
@@ -105,10 +144,19 @@ export default function CoachScreen() {
           end={{ x: 1, y: 0 }}
           style={styles.hero}
         >
-          <Text style={styles.heroTitle}>AI Coach 🤱</Text>
-          {child && ageMonths !== null && (
-            <Text style={styles.heroSub}>{child.name} · {ageMonths} months · Ask anything</Text>
-          )}
+          <View style={styles.heroRow}>
+            <View>
+              <Text style={styles.heroTitle}>AI Coach 🤱</Text>
+              {child && ageMonths !== null && (
+                <Text style={styles.heroSub}>{child.name} · {ageMonths} months · Ask anything</Text>
+              )}
+            </View>
+            {messages.length > 0 && (
+              <TouchableOpacity onPress={clearHistory} hitSlop={8}>
+                <Text style={styles.clearButton}>Clear</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </LinearGradient>
 
         {/* Chat area or starters */}
@@ -193,8 +241,10 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.lg,
   },
+  heroRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   heroTitle: { fontSize: fontSizes.xl, fontWeight: '800', color: '#fff' },
   heroSub: { fontSize: fontSizes.xs, color: 'rgba(255,255,255,0.8)', marginTop: 2 },
+  clearButton: { fontSize: fontSizes.xs, color: 'rgba(255,255,255,0.85)', fontWeight: '700', textDecorationLine: 'underline' },
 
   starters: { flex: 1, padding: spacing.lg },
   startersLabel: { fontSize: fontSizes.sm, color: colors.textMuted, marginBottom: spacing.md, fontWeight: '600' },

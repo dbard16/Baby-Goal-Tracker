@@ -1,9 +1,15 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { DISCLAIMER } from '../constants/theme';
+import { getMockCoachReply } from '../data/mockCoachResponses';
 import type { Child, Milestone, Activity } from '../types';
 
+const apiKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
+const hasRealApiKey = !!apiKey && apiKey !== 'your-anthropic-key' && apiKey !== 'your_anthropic_api_key';
+
+export const isMockCoach = !hasRealApiKey || process.env.EXPO_PUBLIC_MOCK_COACH === 'true';
+
 const client = new Anthropic({
-  apiKey: process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY!,
+  apiKey: apiKey || 'mock-mode-no-key',
 });
 
 function buildSystemPrompt(child: Child, milestones: Milestone[], activities: Activity[]): string {
@@ -11,7 +17,7 @@ function buildSystemPrompt(child: Child, milestones: Milestone[], activities: Ac
     (Date.now() - new Date(child.date_of_birth).getTime()) / (1000 * 60 * 60 * 24 * 30.44)
   );
 
-  return `You are a warm, knowledgeable early childhood development coach helping parents support their child's growth.
+  return `You are Nest, an expert coach on child development from newborn through toddlerhood, helping parents support their child's growth.
 
 Child profile: ${child.name}, ${ageMonths} months old.
 
@@ -22,12 +28,12 @@ Suggested activities this month:
 ${activities.map((a) => `- ${a.title}: ${a.howTo}`).join('\n')}
 
 Guidelines:
-- Always reinforce that development timelines vary widely and these are guidelines, not strict benchmarks
+- Ground your answers in real developmental science. When you reference a milestone or timeline, cite the actual source by name — CDC "Learn the Signs. Act Early.", AAP, or ZERO TO THREE — not a vague "experts say"
+- Every child develops at their own pace. If ${child.name} simply hasn't reached a milestone that's coming up or within the typical range yet, reassure the parent that's normal — do not create anxiety over ordinary variation
+- If a parent describes something that sounds like a genuine, significant delay well past the typical range, acknowledge their concern warmly and suggest bringing it up with their pediatrician — but never diagnose or make a clinical assessment yourself
 - Give specific, actionable, real-life suggestions (e.g. "try hiding a toy under a blanket")
 - Keep responses conversational and warm — parents are often tired and overwhelmed
-- If a parent expresses concern about a delay, acknowledge their feelings and gently suggest discussing with their pediatrician
-- Always cite your source when referencing developmental guidelines (CDC, AAP, ZERO TO THREE)
-- Never diagnose or make clinical assessments
+- Use the conversation history you're given to remember what this parent has already told you — if they've mentioned a concern or milestone before, follow up naturally instead of asking again from scratch
 
 Disclaimer to reinforce when relevant: "${DISCLAIMER}"`;
 }
@@ -38,8 +44,13 @@ export async function chatWithCoach(
   milestones: Milestone[],
   activities: Activity[]
 ): Promise<string> {
+  if (isMockCoach) {
+    const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user')?.content ?? '';
+    return getMockCoachReply(lastUserMessage, child.name);
+  }
+
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5',
     max_tokens: 1024,
     system: buildSystemPrompt(child, milestones, activities),
     messages,
