@@ -106,7 +106,7 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* AI Coach CTA */}
+          {/* Ask Koura CTA */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Your coach</Text>
             <TouchableOpacity
@@ -117,7 +117,7 @@ export default function HomeScreen() {
               <View style={styles.coachLeft}>
                 <Text style={styles.coachEmoji}>🤱</Text>
                 <View>
-                  <Text style={styles.coachTitle}>Ask me anything</Text>
+                  <Text style={styles.coachTitle}>Ask Koura</Text>
                   <Text style={styles.coachSubtitle}>
                     Activities, milestones, worries — I'm here.
                   </Text>

@@ -146,7 +146,7 @@ export default function CoachScreen() {
         >
           <View style={styles.heroRow}>
             <View>
-              <Text style={styles.heroTitle}>AI Coach 🤱</Text>
+              <Text style={styles.heroTitle}>Ask Koura 🤱</Text>
               {child && ageMonths !== null && (
                 <Text style={styles.heroSub}>{child.name} · {ageMonths} months · Ask anything</Text>
               )}

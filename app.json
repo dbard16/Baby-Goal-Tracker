@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "baby-goal-tracker",
-    "slug": "baby-goal-tracker",
-    "scheme": "baby-goal-tracker",
+    "name": "Koura",
+    "slug": "koura",
+    "scheme": "koura",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

@@ -17,7 +17,7 @@ function buildSystemPrompt(child: Child, milestones: Milestone[], activities: Ac
     (Date.now() - new Date(child.date_of_birth).getTime()) / (1000 * 60 * 60 * 24 * 30.44)
   );
 
-  return `You are Nest, an expert coach on child development from newborn through toddlerhood, helping parents support their child's growth.
+  return `You are Koura, an expert coach on child development from newborn through toddlerhood, helping parents support their child's growth.
 
 Child profile: ${child.name}, ${ageMonths} months old.
 

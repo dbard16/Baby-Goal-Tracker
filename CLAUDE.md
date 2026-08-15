@@ -1,6 +1,6 @@
 @AGENTS.md
 
-# Baby Goal Tracker
+# Koura
 
 Expo (React Native) app — mobile-first, iOS + Android.
 
@@ -9,7 +9,7 @@ Expo (React Native) app — mobile-first, iOS + Android.
 A developmental coaching companion for parents of children 0–5. Three layers:
 1. **Milestone tracker** — CDC/AAP-sourced developmental milestones by age checkpoint
 2. **Activities** — curated, source-cited exercises tied to each milestone ("try hiding a block under a napkin")
-3. **AI coach** — Claude-powered chat + voice that gives personalized, age-appropriate guidance
+3. **Koura (AI coach)** — Claude-powered chat + voice that gives personalized, age-appropriate guidance
 
 The core user pain point: parents reach the 6-month checkup questionnaire ("can your child pick up a Cheerio?") and realize they never knew to practice it. This app closes that gap before the appointment.
 
@@ -17,7 +17,7 @@ The core user pain point: parents reach the 6-month checkup questionnaire ("can 
 
 - **Expo SDK 56 / React Native** with Expo Router (file-based)
 - **Supabase** — auth (secure-store persisted), Postgres DB, future pgvector for RAG
-- **Anthropic Claude** (`claude-sonnet-4-6`) — AI coach with child-context system prompt
+- **Anthropic Claude** (`claude-haiku-4-5`; mock-mode fallback in `data/mockCoachResponses.ts`) — Koura, the AI coach, with a child-context system prompt
 - **expo-speech** — text-to-speech for voice coach
 - **expo-av** — audio playback
 - **NativeWind + Tailwind** — styling
@@ -32,7 +32,7 @@ app/
     index.tsx          # Home dashboard
     milestones.tsx     # Milestone tracker
     activities.tsx     # Activity suggestions
-    coach.tsx          # AI coach (chat + voice)
+    coach.tsx          # Koura, the AI coach (chat + voice)
   child/[id].tsx       # Per-child profile
 components/
   milestone/           # MilestoneCard, MilestoneProgress
@@ -53,7 +53,7 @@ constants/theme.ts     # Colors, spacing, DISCLAIMER string
 
 - **DISCLAIMER constant** — surfaces on every milestone view; "every child develops at their own pace" is not optional UX, it's a legal/ethical requirement
 - **Source citations always shown** — CDC, AAP, Pathways.org, ZERO TO THREE build parent trust
-- **AI coach system prompt** always includes child age, current milestone context, and activity list — responses are grounded, not generic
+- **Koura's system prompt** always includes child age, current milestone context, and activity list — responses are grounded, not generic
 - **Voice coach** uses expo-speech for TTS — parents often have hands full
 - **No clinical assessments** — coach can suggest talking to a pediatrician but never diagnoses
 
