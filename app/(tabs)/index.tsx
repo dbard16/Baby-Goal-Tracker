@@ -1,20 +1,33 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useChild } from '../../lib/useChild';
 import { getMilestonesForAge, getUpcomingMilestones } from '../../data/milestones';
 import { getActivitiesForAge } from '../../data/activities';
+import { generateWeeklyBriefing } from '../../lib/claude';
 import { colors, spacing, fontSizes, radius, shadows, DISCLAIMER } from '../../constants/theme';
 import { signOut } from '../../lib/auth';
 
 export default function HomeScreen() {
   const { child, ageMonths, loading, isDemoMode } = useChild();
   const router = useRouter();
+  const [briefing, setBriefing] = useState<string | null>(null);
+  const [briefingLoading, setBriefingLoading] = useState(true);
 
   const currentMilestones = ageMonths ? getMilestonesForAge(ageMonths) : [];
   const upcomingMilestones = ageMonths ? getUpcomingMilestones(ageMonths) : [];
   const activities = ageMonths ? getActivitiesForAge(ageMonths) : [];
+
+  useEffect(() => {
+    if (!child || ageMonths === null) return;
+    setBriefingLoading(true);
+    generateWeeklyBriefing(child, ageMonths, upcomingMilestones, activities)
+      .then(setBriefing)
+      .catch(() => setBriefing(null))
+      .finally(() => setBriefingLoading(false));
+  }, [child?.id, ageMonths]);
 
   if (loading) return <SafeAreaView style={styles.container} />;
 
@@ -77,6 +90,20 @@ export default function HomeScreen() {
           <View style={styles.disclaimerBox}>
             <Text style={styles.disclaimerIcon}>💛</Text>
             <Text style={styles.disclaimerText}>{DISCLAIMER}</Text>
+          </View>
+
+          {/* This week's proactive briefing */}
+          <View style={styles.section}>
+            <View style={[styles.briefingCard, shadows.md]}>
+              <Text style={styles.briefingLabel}>📅 This week for {child.name}</Text>
+              {briefingLoading ? (
+                <ActivityIndicator size="small" color={colors.primary} style={styles.briefingSpinner} />
+              ) : (
+                <Text style={styles.briefingText}>
+                  {briefing ?? "Koura's weekly update couldn't load — check back soon."}
+                </Text>
+              )}
+            </View>
           </View>
 
           {/* Today's activity */}
@@ -260,6 +287,18 @@ const styles = StyleSheet.create({
   // Sections
   section: { marginBottom: spacing.xl },
   sectionTitle: { fontSize: fontSizes.lg, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.md },
+
+  // Weekly briefing
+  briefingCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    borderWidth: 1.5,
+    borderColor: '#DDD6FE',
+  },
+  briefingLabel: { fontSize: fontSizes.sm, fontWeight: '700', color: colors.primaryDark, marginBottom: spacing.sm },
+  briefingText: { fontSize: fontSizes.sm, color: colors.textPrimary, lineHeight: 21 },
+  briefingSpinner: { alignSelf: 'flex-start', marginTop: spacing.xs },
 
   // Featured activity
   activityCard: {

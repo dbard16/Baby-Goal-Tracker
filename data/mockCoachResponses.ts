@@ -44,3 +44,18 @@ export function getMockCoachReply(userMessage: string, childName: string): strin
     : FALLBACKS[Math.floor(Math.random() * FALLBACKS.length)];
   return `[dev mode — mock reply]\n\n${reply.replace(/\byour (child|little one)\b/i, childName)}`;
 }
+
+export function getMockWeeklyBriefing(
+  childName: string,
+  ageMonths: number,
+  upcomingMilestone?: { description: string },
+  activity?: { title: string; howTo: string }
+): string {
+  const milestoneText = upcomingMilestone
+    ? `Coming up developmentally: ${upcomingMilestone.description.toLowerCase()}.`
+    : `${childName} is still settling into this stage's skills — nothing new on the horizon just yet.`;
+  const activityText = activity
+    ? ` Worth trying this week: ${activity.title.toLowerCase()} — ${activity.howTo}`
+    : '';
+  return `[dev mode — mock briefing]\n\nAt ${ageMonths} months, ${milestoneText}${activityText} Every child develops at their own pace, so treat this as a gentle nudge, not a deadline.`;
+}

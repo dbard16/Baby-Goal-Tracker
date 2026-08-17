@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { DISCLAIMER } from '../constants/theme';
-import { getMockCoachReply } from '../data/mockCoachResponses';
+import { getMockCoachReply, getMockWeeklyBriefing } from '../data/mockCoachResponses';
 import type { Child, Milestone, Activity } from '../types';
 
 const apiKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
@@ -54,6 +54,47 @@ export async function chatWithCoach(
     max_tokens: 1024,
     system: buildSystemPrompt(child, milestones, activities),
     messages,
+  });
+
+  const content = response.content[0];
+  if (content.type !== 'text') throw new Error('Unexpected response type');
+  return content.text;
+}
+
+function buildBriefingPrompt(
+  child: Child,
+  ageMonths: number,
+  upcomingMilestones: Milestone[],
+  activities: Activity[]
+): string {
+  return `You are Koura, an expert coach on child development from newborn through toddlerhood.
+
+Write a short, warm "this week" briefing for a parent — 2 to 3 sentences, no greeting, no sign-off. Ground it in real CDC/AAP guidance and name the source naturally if you reference a milestone. Mention one specific, concrete thing to try this week tied to what's coming up developmentally. Every child develops at their own pace — reassure, don't alarm.
+
+Child: ${child.name}, ${ageMonths} months old.
+
+What's coming up developmentally:
+${upcomingMilestones.map((m) => `- [${m.domain}] ${m.description}`).join('\n') || '- No new checkpoint yet — reinforce current-stage skills.'}
+
+Activities available to suggest:
+${activities.slice(0, 5).map((a) => `- ${a.title}: ${a.howTo}`).join('\n') || '- (none for this stage yet)'}`;
+}
+
+export async function generateWeeklyBriefing(
+  child: Child,
+  ageMonths: number,
+  upcomingMilestones: Milestone[],
+  activities: Activity[]
+): Promise<string> {
+  if (isMockCoach) {
+    return getMockWeeklyBriefing(child.name, ageMonths, upcomingMilestones[0], activities[0]);
+  }
+
+  const response = await client.messages.create({
+    model: 'claude-haiku-4-5',
+    max_tokens: 300,
+    system: buildBriefingPrompt(child, ageMonths, upcomingMilestones, activities),
+    messages: [{ role: 'user', content: "Give me this week's briefing." }],
   });
 
   const content = response.content[0];
